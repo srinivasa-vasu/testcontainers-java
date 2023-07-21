@@ -35,6 +35,8 @@ public class YugabyteDBYSQLContainer extends JdbcDatabaseContainer<YugabyteDBYSQ
 
     private String password = "yugabyte";
 
+    private boolean extendedStartupProbe = true;
+
     /**
      * @param imageName image name
      */
@@ -49,7 +51,7 @@ public class YugabyteDBYSQLContainer extends JdbcDatabaseContainer<YugabyteDBYSQ
         super(imageName);
         imageName.assertCompatibleWith(DEFAULT_IMAGE_NAME);
         withExposedPorts(YSQL_PORT, MASTER_DASHBOARD_PORT, TSERVER_DASHBOARD_PORT);
-        waitingFor(new YugabyteDBYSQLWaitStrategy(this).withStartupTimeout(Duration.ofSeconds(60)));
+        waitingFor(new YugabyteDBYSQLWaitStrategy().withStartupTimeout(Duration.ofSeconds(60)));
         withCommand(ENTRYPOINT);
     }
 
@@ -111,6 +113,10 @@ public class YugabyteDBYSQLContainer extends JdbcDatabaseContainer<YugabyteDBYSQ
         return "SELECT 1";
     }
 
+    public boolean isExtendedStartupProbe() {
+        return extendedStartupProbe;
+    }
+
     /**
      * Setting this would create the keyspace
      * @param database database name
@@ -145,5 +151,15 @@ public class YugabyteDBYSQLContainer extends JdbcDatabaseContainer<YugabyteDBYSQ
     public YugabyteDBYSQLContainer withPassword(final String password) {
         this.password = password;
         return this;
+    }
+
+    public YugabyteDBYSQLContainer withExtendedStartupProbe(final boolean startupProbe){
+        this.extendedStartupProbe = startupProbe;
+        return this;
+    }
+
+    @Override
+    protected void waitUntilContainerStarted() {
+        getWaitStrategy().waitUntilReady(this);
     }
 }

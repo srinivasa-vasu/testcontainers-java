@@ -2,6 +2,8 @@ package org.testcontainers.junit.yugabytedb;
 
 import org.junit.Test;
 import org.testcontainers.containers.YugabyteDBYSQLContainer;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.containers.wait.strategy.ShellStrategy;
 import org.testcontainers.db.AbstractContainerDatabaseTest;
 import org.testcontainers.utility.DockerImageName;
 
@@ -14,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class YugabyteDBYSQLTest extends AbstractContainerDatabaseTest {
 
-    private static final String IMAGE_NAME = "yugabytedb/yugabyte:2.14.4.0-b26";
+    private static final String IMAGE_NAME = "yugabytedb/yugabyte:2.18.1.0-b84";
 
     private static final DockerImageName YBDB_TEST_IMAGE = DockerImageName.parse(IMAGE_NAME);
 
@@ -23,7 +25,7 @@ public class YugabyteDBYSQLTest extends AbstractContainerDatabaseTest {
         try (
             // creatingYSQLContainer {
             final YugabyteDBYSQLContainer ysqlContainer = new YugabyteDBYSQLContainer(
-                "yugabytedb/yugabyte:2.14.4.0-b26"
+                "yugabytedb/yugabyte:2.18.1.0-b84"
             )
             // }
         ) {
@@ -95,4 +97,19 @@ public class YugabyteDBYSQLTest extends AbstractContainerDatabaseTest {
                 .isEqualTo(1);
         }
     }
+
+    @Test
+    public void testExtendedProbe() throws SQLException {
+        try (
+            final YugabyteDBYSQLContainer ysqlContainer = new YugabyteDBYSQLContainer(YBDB_TEST_IMAGE)
+                .withExtendedStartupProbe(false)
+                .withInitScript("init/init_yql.sql")
+        ) {
+            ysqlContainer.start();
+            assertThat(performQuery(ysqlContainer, "SELECT greet FROM dsql").getString(1))
+                .as("A record match succeeds")
+                .isEqualTo("Hello DSQL");
+        }
+    }
+
 }
